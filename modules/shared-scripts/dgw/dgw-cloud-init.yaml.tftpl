@@ -1,0 +1,27 @@
+#cloud-config
+write_files:
+  - path: "/run/dgw-cloud-init/dgw-setup.sh"
+    permissions: "0755"
+    content: |
+      ${indent(6, dgw_installation.script)}
+  - path: "/run/dgw-cloud-init/dgw-configuration.sh"
+    permissions: "0755"
+    content: |
+      ${indent(6, dgw_configuration_script)}   
+      
+runcmd:
+%{ if dns_domain != null ~}
+  - "mkdir /etc/systemd/resolved.conf.d/"
+  - "echo \"[Resolve]\" > /etc/systemd/resolved.conf.d/domains.conf"
+  - "echo \"Domains=${dns_domain}\" >> /etc/systemd/resolved.conf.d/domains.conf"
+  - "systemctl restart systemd-resolved"
+%{ endif ~}
+  - "export DGW_VERSION=${dgw_installation.version}"
+  - "export DGW_RESOURCE_URL=${dgw_installation.url}"
+  - "/run/dgw-cloud-init/dgw-setup.sh"
+  - "/run/dgw-cloud-init/dgw-configuration.sh"
+  - "systemctl stop google-osconfig-agent.service google-guest-agent.service apparmor.service gce-workload-cert-refresh.timer"
+  - "swapoff -a"
+  - "rm -rf /run/dgw-cloud-init"
+
+

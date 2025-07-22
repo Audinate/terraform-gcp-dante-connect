@@ -1,0 +1,26 @@
+
+%{ if change_domain }
+    Write-Output "Executing dns setup script..."
+    $danteDomainValue = "${domain}"
+
+    $adapterGuids = Get-NetAdapter | Select-Object -ExpandProperty InterfaceGuid
+
+    $registryPath = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\$adapterGUIDs"
+ 
+    
+    Write-Output "Dante domain: $danteDomainValue"
+    
+    foreach ($adapterGUID in $adapterGUIDs) {
+        # Construct the registry path for the current adapter GUID
+        $registryPath = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\$adapterGUID"
+        
+        # Check if the Domain key exists and update it
+        if ((Get-ItemProperty -Path $registryPath -Name "Domain" -ErrorAction SilentlyContinue) -ne $null) {
+            Set-ItemProperty -Path $registryPath -Name "Domain" -Value $danteDomainValue
+            Write-Host "Domain value updated to $danteDomainValue for adapter $adapterGUID"
+        } else {
+            Write-Host "Domain key does not exist or access error; please check the GUID and permissions for adapter $adapterGUID."
+        }
+    }
+%{ endif }
+

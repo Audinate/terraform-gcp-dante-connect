@@ -1,0 +1,20 @@
+#cloud-config
+write_files:
+  - path: "/run/dante-webrtc-cloud-init/dante-webrtc-setup.sh"
+    permissions: "0755"
+    content: |
+      ${indent(6, dante_webrtc_endpoint_installation.script)}
+  - path: "/run/dante-webrtc-cloud-init/dante-webrtc-configuration.sh"
+    permissions: "0755"
+    content: |
+      ${indent(6, dante_webrtc_endpoint_configuration_script)}
+runcmd:
+%{ if dns_domain != null ~}
+  - "mkdir /etc/systemd/resolved.conf.d/"
+  - "echo \"[Resolve]\" > /etc/systemd/resolved.conf.d/domains.conf"
+  - "echo \"Domains=${dns_domain}\" >> /etc/systemd/resolved.conf.d/domains.conf"
+  - "systemctl restart systemd-resolved"
+%{ endif ~}
+  - "/run/dante-webrtc-cloud-init/dante-webrtc-setup.sh"
+  - "/run/dante-webrtc-cloud-init/dante-webrtc-configuration.sh"
+  - "rm -rf /run/dante-webrtc-cloud-init"
